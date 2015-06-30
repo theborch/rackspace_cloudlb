@@ -14,5 +14,6 @@ class Chef
     attribute(:load_balancer_id, :kind_of => String, :required => true)
     attribute(:rackspace_username, :kind_of => String, :required => true)
     attribute(:rackspace_api_key, :kind_of => String, :required => true)
+    attribute(:rackspace_rackspace_region, :kind_of => String, :default => 'IAD')
   end
 end

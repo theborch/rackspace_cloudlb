@@ -1,4 +1,4 @@
-module RackspaceLbaas
+module RackspaceLbaasCookbook
   module Helpers
     require 'fog'
     def lbaas
