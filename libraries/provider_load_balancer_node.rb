@@ -12,7 +12,7 @@ class Chef
 
     def check_node_exists
       return unless @current_resource.lb && !@current_resource.nodes.empty?
-      @current_resource.nodes.map { |node| true if node.address == new_resource.node_address && node.port == new_resource.port }
+      @current_resource.nodes.map { |n| true if n.address == new_resource.node_address && n.port == new_resource.port }
     end
 
     def action_create_node
