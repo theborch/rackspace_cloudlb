@@ -5,6 +5,6 @@
 #
 # Copyright 2014, Rackspace
 #
-chef_gem 'fog' do
-  action :install
-end
+include_recipe 'xml::ruby'
+
+chef_gem 'fog'
