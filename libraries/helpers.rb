@@ -14,6 +14,9 @@ module RackspaceLbaasCookbook
   end
   module NodeHelpers
     include RackspaceLbaasCookbook
+    def retrieve_lb_id(name)
+      @lb = lbaas.list_load_balancers.data[:body]['loadBalancers'].select { |lbs| lbs['name'] == name }.map { |lb| lb['id'] }.first
+      return @lb unless @lb.nil?
     end
 
     def lb_status(id)
@@ -25,7 +28,7 @@ module RackspaceLbaasCookbook
       return true unless @lb_node.nil?
     end
 
-    def create_node(id, addr, port)
+    def create_node(id = retrieve_lb_id, addr, port)
       return if check_node_exists(id, addr, port)
       begin
         status = lb_status(id)
@@ -51,7 +54,7 @@ module RackspaceLbaasCookbook
       end
     end
 
-    def update_node(id, addr, port, condition)
+    def update_node(id = retrieve_lb_id, addr, port, condition)
       return unless check_node_exists(id, addr, port)
       begin
         status = lb_status(id)
@@ -73,7 +76,7 @@ module RackspaceLbaasCookbook
       end
     end
 
-    def delete_node(id, addr, port)
+    def delete_node(id = retrieve_lb_id, addr, port)
       return unless check_node_exists(id, addr, port)
       begin
         status = lb_status(id)
