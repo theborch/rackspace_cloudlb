@@ -58,6 +58,35 @@ load_balancer_node 'spcblls-01' do
   action :delete
 end
 ```
+
+Create a new lode balancer:
+```ruby
+load_balancer 'spcblls-01' do
+  username 'kngroland'
+  api_key '1122334455'
+end
+```
+
+Update a load balancer:
+```ruby
+load_balancer 'spcblls-01' do
+  username 'kngroland'
+  api_key '1122334455'
+  protocol 'HTTPS'
+  port 443
+  action :update
+end
+```
+
+Delete a load balancer:
+```ruby
+load_balancer 'spcblls-01' do
+  username 'kngroland'
+  api_key '1122334455'
+  action :delete
+end
+```
+
 ## Authors
 
 Author:: Will Borchardt (will.borchardt@rackspace.com)
