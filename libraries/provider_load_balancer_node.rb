@@ -4,7 +4,7 @@ require 'chef/provider'
 class Chef
   class Provider::LoadBalancerNode < Provider
     include Poise
-    include RackspaceLbaasCookbook::Helpers
+    include RackspaceLbaasCookbook::NodeHelpers
     provides(:load_balancer_node)
     def whyrun_supported?
       true

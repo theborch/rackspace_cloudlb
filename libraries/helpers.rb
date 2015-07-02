@@ -3,15 +3,17 @@ end
 class StatusError < StandardError
 end
 module RackspaceLbaasCookbook
-  module Helpers
-    def lbaas
-      require 'fog'
-      Fog::Rackspace::LoadBalancers.new(
-        :rackspace_username => new_resource.username,
-        :rackspace_api_key => new_resource.api_key,
-        :rackspace_region => new_resource.region,
-        :rackspace_auth_url => Fog::Rackspace::US_AUTH_ENDPOINT
-      )
+  def lbaas
+    require 'fog'
+    Fog::Rackspace::LoadBalancers.new(
+      :rackspace_username => new_resource.username,
+      :rackspace_api_key => new_resource.api_key,
+      :rackspace_region => new_resource.region,
+      :rackspace_auth_url => Fog::Rackspace::US_AUTH_ENDPOINT
+    )
+  end
+  module NodeHelpers
+    include RackspaceLbaasCookbook
     end
 
     def lb_status(id)
@@ -90,6 +92,41 @@ module RackspaceLbaasCookbook
         Chef::Log.error "An error occured enabling the node, the load balancer status is currently #{status}"
       rescue Fog::Rackspace::LoadBalancers::ServiceError => e
         raise "An error occured updating the node(#{addr}:#{port}) : #{e}"
+      end
+    end
+  end
+  module LbHelpers
+    include RackspaceLbaasCookbook
+    def check_lb_exists(name)
+      @lb = lbaas.list_load_balancers.data[:body]['loadBalancers'].select { |lbs| lbs['name'] == name }.map { |lb| lb['id'] }.first
+      return true unless @lb.nil?
+    end
+
+    def create_lb(name, protocol)
+      return if check_lb_exists(name)
+      begin
+        lbaas.create_load_balancer(name, protocol)
+      rescue Fog::Rackspace::LoadBalancers::ServiceError => e
+        raise "An error occured creating the load balancer (#{name}) : #{e}"
+      end
+    end
+
+    def update_lb(name, protocol, options = {})
+      return unless check_lb_exists(name)
+      begin
+        all_options = options.merge(:protocol => protocol, :name => name)
+        lbaas.update_load_balancer(@lb, all_options)
+      rescue Fog::Rackspace::LoadBalancers::ServiceError => e
+        raise "An error occured updating the load balancer (#{name}) : #{e}"
+      end
+    end
+
+    def delete_lb(name)
+      return unless check_lb_exists(name)
+      begin
+        lbaas.delete_load_balancer(id)
+      rescue Fog::Rackspace::LoadBalancers::ServiceError => e
+        raise "An error occured deleting the load balancer (#{name}) : #{e}"
       end
     end
   end
