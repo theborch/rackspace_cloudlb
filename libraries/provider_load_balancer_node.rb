@@ -4,57 +4,44 @@ require 'chef/provider'
 class Chef
   class Provider::LoadBalancerNode < Provider
     include Poise
-    include ::RackspaceLbaasCookbook::Helpers
-
+    include RackspaceLbaasCookbook::Helpers
+    provides(:load_balancer_node)
     def whyrun_supported?
       true
     end
 
-    @loadbalancer = lbaas.load_balancers.get(new_resource.load_balancer_id)
-    @nodes = @loadbalancer.nodes
-    @node = @nodes.map { |n| n.id if n.address == new_resource.address && n.port == new_resource.port }.first
-
-    def check_node_exists
-      return unless @loadbalancer && !@nodes.empty?
-      @nodes.map { |n| true if n.address == new_resource.address && n.port == new_resource.port }
-    end
-
     def action_create
-      return if check_node_exists
-      converge_by("Adding node to cloud load balancer #{new_resource.load_balancer_id}") do
-        begin
-          lbaas.create_node(new_resource.load_balancer_id, new_resource.address, new_resource.port, new_resource.options[:condition])
-        rescue Fog::Rackspace::LoadBalancers::ServiceError => e
-          raise "An error occured making the create node request: #{e}"
-        end
-        Chef::Log.info 'Node successfully added to cloud loadbalancer'
+      converge_by("Adding node(#{new_resource.address}:#{new_resource.port}) to cloud load balancer #{new_resource.load_balancer_id}") do
+        create_node(new_resource.load_balancer_id, new_resource.address, new_resource.port)
+        Chef::Log.info 'Node successfully added to cloud load balancer'
       end
     end
 
-    def action_update
-      return unless check_node_exists
-      converge_by("Updating node on cloud load balancer #{new_resource.load_balancer_id}") do
-        begin
-          lbaas.update_node(new_resource.load_balancer_id, @node, new_resource.options)
-        rescue Fog::Rackspace::LoadBalancers::ServiceError => e
-          raise "An error occured making the update node request: #{e}"
-        end
-        Chef::Log.info 'Node successfully updated on cloud loadbalancer'
+    def action_enable
+      converge_by("Enabling node(#{new_resource.address}:#{new_resource.port}) on cloud load balancer #{new_resource.load_balancer_id}") do
+        update_node(new_resource.load_balancer_id, new_resource.address, new_resource.port, 'ENABLED')
+        Chef::Log.info 'Node successfully enabled on cloud load balancer'
+      end
+    end
+
+    def action_drain
+      converge_by("Draining node(#{new_resource.address}:#{new_resource.port}) on cloud load balancer #{new_resource.load_balancer_id}") do
+        update_node(new_resource.load_balancer_id, new_resource.address, new_resource.port, 'DRAINING')
+        Chef::Log.info 'Node successfully draining on cloud load balancer'
+      end
+    end
+
+    def action_disable
+      converge_by("Disabling node(#{new_resource.address}:#{new_resource.port}) on cloud load balancer #{new_resource.load_balancer_id}") do
+        update_node(new_resource.load_balancer_id, new_resource.address, new_resource.port, 'DISABLED')
+        Chef::Log.info 'Node successfully disabled on cloud load balancer'
       end
     end
 
     def action_delete
-      return unless check_node_exists
-      converge_by("Removing Node from cloud load balancer #{new_resource.load_balancer_id}") do
-        begin
-          lbaas.delete_node(new_resource.load_balancer_id, @node)
-        rescue Fog::Rackspace::LoadBalancers::NotFound
-          Chef::Log.info 'Node does not belong to specified load balancer ID'
-        rescue Fog::Rackspace::LoadBalancers::ServiceError => e
-          raise "An error occurred removing node from load balancer #{e}"
-        else
-          Chef::Log.info 'Node has been removed from load balancer pool'
-        end
+      converge_by("Deleting node(#{new_resource.address}:#{new_resource.port}) on cloud load balancer #{new_resource.load_balancer_id}") do
+        delete_node(new_resource.load_balancer_id, new_resource.address, new_resource.port)
+        Chef::Log.info 'Node successfully deleted on cloud load balancer'
       end
     end
   end

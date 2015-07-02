@@ -1,7 +1,11 @@
+class StatusPendingError < StandardError
+end
+class StatusError < StandardError
+end
 module RackspaceLbaasCookbook
   module Helpers
-    require 'fog'
     def lbaas
+      require 'fog'
       Fog::Rackspace::LoadBalancers.new(
         :rackspace_username => new_resource.username,
         :rackspace_api_key => new_resource.api_key,
@@ -10,33 +14,83 @@ module RackspaceLbaasCookbook
       )
     end
 
-    def load_current_resource
-      @current_resource = Chef::Resource::RackspaceLbaasLoadBalancerNode.new(new_resource.name)
-      lb = loadbalancer
-      if lb
-        @current_resource.lb = lb
-        @current_resource.nodes = loadbalancer_nodes
-        @current_resource.node = loadbalancer_node
-      else
-        @current_resource
+    def lb_status(id)
+      lbaas.load_balancers.get(id).state
+    end
+
+    def check_node_exists(id, addr, port)
+      @lb_node = lbaas.load_balancers.get(id).nodes.map { |n| n.id if n.address == addr && n.port == port }.compact.first
+      return true unless @lb_node.nil?
+    end
+
+    def create_node(id, addr, port)
+      return if check_node_exists(id, addr, port)
+      begin
+        status = lb_status(id)
+        if status == 'ACTIVE'
+          lbaas.create_node(id, addr, port, 'DISABLED')
+        elsif status == 'PENDING_UPDATE'
+          fail StatusPendingError
+        else
+          fail StatusError
+        end
+      rescue StatusPendingError
+        Chef::Log.info 'Load balancer is still pending previous update, waiting 3 seconds to try again.'
+        sleep 3
+        retry
+      rescue StatusError
+        Chef::Log.error "An error occured creating the node, the load balancer status is currently #{status}"
+      rescue Fog::Rackspace::LoadBalancers::ServiceError => e
+        if e.to_s.include? 'Duplicate'
+          Chef::Log.info 'Node already exists, moving on.'
+        else
+          raise "An error occured creating the node(#{addr}:#{port}) : #{e}"
+        end
       end
     end
 
-    def loadbalancer
-      lbaas.load_balancers.get(new_resource.load_balancer_id)
-      rescue Fog::Rackspace::LoadBalancers::NotFound
-        raise 'Load balancer ID specified does not exist, please create load balancer and provide a valid ID'
+    def update_node(id, addr, port, condition)
+      return unless check_node_exists(id, addr, port)
+      begin
+        status = lb_status(id)
+        if status == 'ACTIVE'
+          lbaas.update_node(id, @lb_node, :condition => condition)
+        elsif status == 'PENDING_UPDATE'
+          fail StatusPendingError
+        else
+          fail StatusError
+        end
+      rescue StatusPendingError
+        Chef::Log.info 'Load balancer is still pending previous update, waiting 3 seconds to try again.'
+        sleep 3
+        retry
+      rescue StatusError
+        Chef::Log.error "An error occured enabling the node, the load balancer status is currently #{status}"
+      rescue Fog::Rackspace::LoadBalancers::ServiceError => e
+        raise "An error occured updating the node(#{addr}:#{port}) : #{e}"
+      end
     end
 
-    def loadbalancer_node
-      return unless @current_resource.lb && !@current_resource.nodes.empty? && check_node_exists
-      node = @current_resource.nodes.map { |n| n.id if n.address == new_resource.node_address && n.port == new_resource.port }
-      @current_resource.nodes.get(node[0])
-    end
-
-    def loadbalancer_nodes
-      return unless @current_resource.lb
-      @current_resource.lb.nodes
+    def delete_node(id, addr, port)
+      return unless check_node_exists(id, addr, port)
+      begin
+        status = lb_status(id)
+        if status == 'ACTIVE'
+          lbaas.delete_node(id, @lb_node)
+        elsif status == 'PENDING_UPDATE'
+          fail StatusPendingError
+        else
+          fail StatusError
+        end
+      rescue StatusPendingError
+        Chef::Log.info 'Load balancer is still pending previous update, waiting 3 seconds to try again.'
+        sleep 3
+        retry
+      rescue StatusError
+        Chef::Log.error "An error occured enabling the node, the load balancer status is currently #{status}"
+      rescue Fog::Rackspace::LoadBalancers::ServiceError => e
+        raise "An error occured updating the node(#{addr}:#{port}) : #{e}"
+      end
     end
   end
 end
