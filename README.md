@@ -11,26 +11,28 @@ rackspace_lbaas is a Chef library cookbook to manage Rackspace cloud load balanc
 ## Usage
 
 Place a dependency on the rackspace_cloudlb cookbook in your cookbook's metadata.rb:
-```ruby
+
+```
 depends 'rackspace_lbaas'
 ```
 
 Add the default recipe to your run list:
-```ruby
-...
+
+```
   recipe[rackspace_lbaas]
-...
 ```
 
 Or include it in your recipe:
-```ruby
+
+```
   include_recipe 'rackspace_lbaas'
 ```
 
 ### Examples
 
 Create a new lode balancer node:
-```ruby
+
+```
 load_balancer_node 'spcblls-01' do
   username 'kngroland'
   api_key '1122334455'
@@ -40,7 +42,8 @@ end
 ```
 
 Change the condition of a load balancer node:
-```ruby
+
+```
 load_balancer_node 'spcblls-01' do
   username 'kngroland'
   api_key '1122334455'
@@ -50,7 +53,8 @@ end
 ```
 
 Delete a load balancer node:
-```ruby
+
+```
 load_balancer_node 'spcblls-01' do
   username 'kngroland'
   api_key '1122334455'
@@ -60,7 +64,8 @@ end
 ```
 
 Create a new lode balancer:
-```ruby
+
+```
 load_balancer 'spcblls-01' do
   username 'kngroland'
   api_key '1122334455'
@@ -68,7 +73,8 @@ end
 ```
 
 Update a load balancer:
-```ruby
+
+```
 load_balancer 'spcblls-01' do
   username 'kngroland'
   api_key '1122334455'
@@ -79,7 +85,8 @@ end
 ```
 
 Delete a load balancer:
-```ruby
+
+```
 load_balancer 'spcblls-01' do
   username 'kngroland'
   api_key '1122334455'
