@@ -10,7 +10,7 @@ class Chef
 
     attribute(:address, :kind_of => String, :default => lazy { node['ipaddress'] }, :required => true)
     attribute(:api_key, :kind_of => String, :required => true)
-    attribute(:load_balancer_id, :kind_of => String, :required => true)
+    attribute(:load_balancer_id, :kind_of => String)
     attribute(:name, :name_attribute => true, :kind_of => String, :required => true)
     attribute(:port, :kind_of => Integer, :default => 80, :required => true)
     attribute(:region, :kind_of => String, :default => 'IAD', :required => true)
