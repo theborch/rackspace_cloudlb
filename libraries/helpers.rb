@@ -28,7 +28,10 @@ module RackspaceLbaasCookbook
       return true unless @lb_node.nil?
     end
 
-    def create_node(id = retrieve_lb_id, addr, port)
+    def create_node(name, id = nil, addr, port)
+      if id.nil?
+        id = retrieve_lb_id(name)
+      end
       return if check_node_exists(id, addr, port)
       begin
         status = lb_status(id)
@@ -54,7 +57,10 @@ module RackspaceLbaasCookbook
       end
     end
 
-    def update_node(id = retrieve_lb_id, addr, port, condition)
+    def update_node(name, id = nil, addr, port, condition)
+      if id.nil?
+        id = retrieve_lb_id(name)
+      end
       return unless check_node_exists(id, addr, port)
       begin
         status = lb_status(id)
@@ -76,7 +82,10 @@ module RackspaceLbaasCookbook
       end
     end
 
-    def delete_node(id = retrieve_lb_id, addr, port)
+    def delete_node(name, id = nil, addr, port)
+      if id.nil?
+        id = retrieve_lb_id(name)
+      end
       return unless check_node_exists(id, addr, port)
       begin
         status = lb_status(id)
