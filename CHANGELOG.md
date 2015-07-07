@@ -1,6 +1,11 @@
 . CHANGELOG
 ===========
 
+0.1.4
+-----
+- Will B - Update node helper methods to allow for usage of load balancer names in
+           place of load balancer ids.
+
 0.1.3
 -----
 - Will B - Remove load balancer id as a required attribute and update FC rake task.
